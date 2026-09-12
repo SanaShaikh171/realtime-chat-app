@@ -1,4 +1,5 @@
 require('dotenv').config();
+const User = require('./models/User');
 const express = require('express');
 const mongoose = require('mongoose');
 const http = require('http');
@@ -15,16 +16,34 @@ mongoose
   .then(() => console.log('MongoDB connected successfully'))
   .catch((err) => console.log('MongoDB connection error:', err));
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.get('/', (req, res) => {
   res.send('Server is alive!');
 });
+const onlineUsers = new Map();
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
-  socket.on('disconnect', () => {
+  socket.on('user_online', async (userId) => {
+    onlineUsers.set(userId, socket.id);
+    socket.userId = userId;
+    await User.findByIdAndUpdate(userId, { isOnline: true });
+    io.emit('online_users', Array.from(onlineUsers.keys()));
+  });
+  socket.on('disconnect', async () => {
     console.log('A user disconnected:', socket.id);
+    if (socket.userId) {
+      onlineUsers.delete(socket.userId);
+      await User.findByIdAndUpdate(socket.userId, {
+        isOnline: false,
+        lastSeen: new Date(),
+      });
+      io.emit('online_users', Array.from(onlineUsers.keys()));
+    }
   });
 });
+
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
