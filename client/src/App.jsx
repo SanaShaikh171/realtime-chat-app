@@ -1,37 +1,26 @@
-import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
-import './App.css';
-
-const socket = io('http://localhost:5000');
-
-function App() {
-  const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    socket.on('connect', () => {
-      console.log('Connected to server with id:', socket.id);
-      setConnected(true);
-    });
-
-    socket.on('disconnect', () => {
-      setConnected(false);
-    });
-
-    return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-    };
-  }, []);
-
+import { Routes, Route } from 'react-router-dom';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import { useAuth } from './context/AuthContext';
+function Home() {
+  const { user, logout } = useAuth();
   return (
-    <div className="app-shell">
-      <h1>CampusConnect</h1>
-      <p className="status">
-        Socket status: {connected ? '🟢 Connected' : '🔴 Not connected'}
-      </p>
+    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+      {' '}
+      <h1>Welcome to CampusConnect, {user?.name}!</h1>{' '}
+      <button onClick={logout}>Logout</button>{' '}
     </div>
   );
 }
-
+function App() {
+  const { user } = useAuth();
+  return (
+    <Routes>
+      {' '}
+      <Route path="/signup" element={<Signup />} />{' '}
+      <Route path="/login" element={<Login />} />{' '}
+      <Route path="/" element={user ? <Home /> : <Login />} />{' '}
+    </Routes>
+  );
+}
 export default App;
-
