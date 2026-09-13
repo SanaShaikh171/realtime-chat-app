@@ -12,7 +12,7 @@ function Chat() {
   const token = localStorage.getItem('token');
   useEffect(() => {
     axios
-      .get('http://localhost:5000/api/users', {
+      .get(`${import.meta.env.VITE_API_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setStudents(res.data.filter((s) => s._id !== user.id)));
@@ -26,7 +26,7 @@ function Chat() {
   }, [socket]);
   const openChatWith = async (otherUserId) => {
     const res = await axios.post(
-      'http://localhost:5000/api/conversations/dm',
+      `${import.meta.env.VITE_API_URL}/api/conversations/dm`,
       { otherUserId },
       { headers: { Authorization: `Bearer ${token}` } }
     );
