@@ -1,4 +1,5 @@
 require('dotenv').config();
+const Message = require('./models/Message');
 const User = require('./models/User');
 const express = require('express');
 const mongoose = require('mongoose');
@@ -8,6 +9,10 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 app.use(express.json());
+const conversationRoutes = require('./routes/conversationRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/messages', messageRoutes);
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const PORT = 5000;
@@ -25,6 +30,22 @@ app.get('/', (req, res) => {
 const onlineUsers = new Map();
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
+  socket.on('join_room', (conversationId) => {
+    socket.join(conversationId);
+  });
+  socket.on('send_message', async ({ conversationId, senderId, text }) => {
+    try {
+      const message = await Message.create({
+        conversation: conversationId,
+        sender: senderId,
+        text,
+      });
+      const populatedMessage = await message.populate('sender', 'name');
+      io.to(conversationId).emit('receive_message', populatedMessage);
+    } catch (err) {
+      console.log('Error sending message:', err);
+    }
+  });
   socket.on('user_online', async (userId) => {
     onlineUsers.set(userId, socket.id);
     socket.userId = userId;
