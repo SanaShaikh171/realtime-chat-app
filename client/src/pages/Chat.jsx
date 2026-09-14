@@ -2,17 +2,21 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import ThemeToggle from '../components/ThemeToggle';
+import '../styles/Chat.css';
 function Chat() {
   const { user, logout } = useAuth();
   const { socket, onlineUsers } = useSocket();
   const [students, setStudents] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
+  const [activeStudent, setActiveStudent] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const token = localStorage.getItem('token');
+  const API = import.meta.env.VITE_API_URL;
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_API_URL}/api/users`, {
+      .get(`${API}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setStudents(res.data.filter((s) => s._id !== user.id)));
@@ -24,18 +28,18 @@ function Chat() {
     });
     return () => socket.off('receive_message');
   }, [socket]);
-  const openChatWith = async (otherUserId) => {
+  const openChatWith = async (student) => {
+    setActiveStudent(student);
     const res = await axios.post(
-      `${import.meta.env.VITE_API_URL}/api/conversations/dm`,
-      { otherUserId },
+      `${API}/api/conversations/dm`,
+      { otherUserId: student._id },
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const conversation = res.data;
     setActiveConversation(conversation);
-    const msgRes = await axios.get(
-      `http://localhost:5000/api/messages/${conversation._id}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const msgRes = await axios.get(`${API}/api/messages/${conversation._id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     setMessages(msgRes.data);
     socket.emit('join_room', conversation._id);
   };
@@ -48,86 +52,113 @@ function Chat() {
     });
     setText('');
   };
+  const initials = (name) =>
+    name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
+    <div className="chat-page">
       {' '}
-      <div
-        style={{
-          width: '250px',
-          borderRight: '1px solid #ccc',
-          padding: '1rem',
-        }}
-      >
+      <div className="sidebar">
         {' '}
-        <h3>{user?.name}</h3> <button onClick={logout}>Logout</button>{' '}
-        <h4>Students</h4>{' '}
-        {students.map((s) => (
-          <div
-            key={s._id}
-            onClick={() => openChatWith(s._id)}
-            style={{
-              padding: '0.5rem',
-              cursor: 'pointer',
-              background: activeConversation?.participants?.some(
-                (p) => p._id === s._id
-              )
-                ? '#eee'
-                : 'transparent',
-            }}
-          >
+        <div className="sidebar-header">
+          {' '}
+          <div className="sidebar-user">
             {' '}
-            {onlineUsers.includes(s._id) ? '🟢' : '⚪'} {s.name}{' '}
-          </div>
-        ))}{' '}
+            <div className="avatar-circle">{initials(user?.name)}</div>{' '}
+            <span>{user?.name}</span>{' '}
+          </div>{' '}
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            {' '}
+            <ThemeToggle />{' '}
+            <button className="icon-btn" onClick={logout} title="Logout">
+              ⏻
+            </button>{' '}
+          </div>{' '}
+        </div>{' '}
+        <div className="sidebar-title">Students</div>{' '}
+        <div style={{ overflowY: 'auto' }}>
+          {' '}
+          {students.map((s) => (
+            <div
+              key={s._id}
+              onClick={() => openChatWith(s)}
+              className={`student-item ${activeStudent?._id === s._id ? 'active' : ''}`}
+            >
+              {' '}
+              <span
+                className={`status-dot ${onlineUsers.includes(s._id) ? 'online' : 'offline'}`}
+              ></span>{' '}
+              {s.name}{' '}
+            </div>
+          ))}{' '}
+        </div>{' '}
       </div>{' '}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '1rem',
-        }}
-      >
+      <div className="chat-main">
         {' '}
         {activeConversation ? (
           <>
             {' '}
-            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem' }}>
+            <div className="chat-header">
               {' '}
-              {messages.map((m) => (
-                <div key={m._id} style={{ marginBottom: '0.5rem' }}>
-                  {' '}
-                  <strong>{m.sender.name}:</strong> {m.text}{' '}
-                  <span
-                    style={{
-                      fontSize: '0.75rem',
-                      color: '#888',
-                      marginLeft: '0.5rem',
-                    }}
+              {activeStudent?.name}{' '}
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  marginLeft: '0.6rem',
+                  fontFamily: 'Inter',
+                }}
+              >
+                {' '}
+                {onlineUsers.includes(activeStudent?._id)
+                  ? 'Online'
+                  : 'Offline'}{' '}
+              </span>{' '}
+            </div>{' '}
+            <div className="messages-area">
+              {' '}
+              {messages.map((m) => {
+                const isOwn = m.sender._id === user.id || m.sender === user.id;
+                return (
+                  <div
+                    key={m._id}
+                    className={`message-row ${isOwn ? 'own' : 'other'}`}
                   >
                     {' '}
-                    {new Date(m.createdAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}{' '}
-                  </span>{' '}
-                </div>
-              ))}{' '}
+                    <div className={`bubble ${isOwn ? 'own' : 'other'}`}>
+                      {' '}
+                      {m.text}{' '}
+                      <span className="bubble-time">
+                        {' '}
+                        {new Date(m.createdAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}{' '}
+                      </span>{' '}
+                    </div>{' '}
+                  </div>
+                );
+              })}{' '}
             </div>{' '}
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="message-input-row">
               {' '}
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                 placeholder="Type a message..."
-                style={{ flex: 1, padding: '0.5rem' }}
               />{' '}
-              <button onClick={sendMessage}>Send</button>{' '}
+              <button className="send-btn" onClick={sendMessage}>
+                Send
+              </button>{' '}
             </div>{' '}
           </>
         ) : (
-          <p>Select a student to start chatting</p>
+          <div className="empty-state">Pick a classmate to start chatting</div>
         )}{' '}
       </div>{' '}
     </div>

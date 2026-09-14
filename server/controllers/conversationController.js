@@ -41,4 +41,27 @@ const createGroup = async (req, res) => {
     res.status(500).json({ message: 'Failed to create group' });
   }
 };
-module.exports = { getMyConversations, startConversation, createGroup };
+
+const Message = require('../models/Message');
+const deleteConversation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const conversation = await Conversation.findById(id);
+    if (!conversation || !conversation.participants.includes(req.userId)) {
+      return res
+        .status(403)
+        .json({ message: 'Not authorized to delete this conversation' });
+    }
+    await Message.deleteMany({ conversation: id });
+    await Conversation.findByIdAndDelete(id);
+    res.json({ message: 'Conversation deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete conversation' });
+  }
+};
+module.exports = {
+  getMyConversations,
+  startConversation,
+  createGroup,
+  deleteConversation,
+};

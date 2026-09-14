@@ -1,0 +1,135 @@
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+}
+.auth-hero {
+  flex: 1;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem;
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+.auth-hero::before {
+  content: '';
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-warm) 0%, transparent 70%);
+  opacity: 0.25;
+  top: -100px;
+  right: -100px;
+}
+.auth-hero-brand {
+  font-family: 'Lora', serif;
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-bottom: 3rem;
+}
+.auth-hero h1 {
+  font-size: 2.6rem;
+  line-height: 1.25;
+  max-width: 480px;
+  margin: 0 0 1rem 0;
+}
+.auth-hero p {
+  color: var(--text-muted);
+  max-width: 420px;
+  line-height: 1.6;
+  font-size: 1.05rem;
+}
+.auth-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+.auth-form-panel form {
+  width: 100%;
+  max-width: 360px;
+}
+.auth-form-panel h2 {
+  font-size: 1.6rem;
+  margin-bottom: 0.4rem;
+}
+.auth-subtext {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+.field {
+  margin-bottom: 1.3rem;
+}
+.field label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+.field input {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+}
+.field input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.btn-primary {
+  width: 100%;
+  padding: 0.8rem;
+  background: var(--accent-warm);
+  color: #2b332e;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+.auth-switch {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.auth-switch a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.error-text {
+  color: #c4664b;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.theme-toggle {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+@media (max-width: 800px) {
+  .auth-hero {
+    display: none;
+  }
+}

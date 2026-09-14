@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    hiddenUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
 );
