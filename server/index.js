@@ -33,24 +33,39 @@ io.on('connection', (socket) => {
   socket.on('join_room', (conversationId) => {
     socket.join(conversationId);
   });
-  socket.on('send_message', async ({ conversationId, senderId, text }) => {
-    try {
-      const message = await Message.create({
-        conversation: conversationId,
-        sender: senderId,
-        text,
-      });
-      const populatedMessage = await message.populate('sender', 'name');
-      io.to(conversationId).emit('receive_message', populatedMessage);
-    } catch (err) {
-      console.log('Error sending message:', err);
+  socket.on(
+    'send_message',
+    async ({ conversationId, senderId, text, attachmentType, fileName }) => {
+      try {
+        const message = await Message.create({
+          conversation: conversationId,
+          sender: senderId,
+          text: text || '',
+          attachmentType: attachmentType || undefined,
+          fileName: fileName || '',
+        });
+        const populatedMessage = await message.populate('sender', 'name');
+        io.to(conversationId).emit('receive_message', populatedMessage);
+      } catch (err) {
+        console.log('Error sending message:', err);
+      }
     }
-  });
+  );
   socket.on('user_online', async (userId) => {
     onlineUsers.set(userId, socket.id);
     socket.userId = userId;
     await User.findByIdAndUpdate(userId, { isOnline: true });
     io.emit('online_users', Array.from(onlineUsers.keys()));
+  });
+  socket.on('delete_message', async ({ messageId, conversationId, userId }) => {
+    try {
+      const message = await Message.findById(messageId);
+      if (!message || message.sender.toString() !== userId) return;
+      await Message.findByIdAndDelete(messageId);
+      io.to(conversationId).emit('message_deleted', messageId);
+    } catch (err) {
+      console.log('Error deleting message:', err);
+    }
   });
   socket.on('disconnect', async () => {
     console.log('A user disconnected:', socket.id);
