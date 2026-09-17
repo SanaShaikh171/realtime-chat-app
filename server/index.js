@@ -6,15 +6,19 @@ const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://realtime-chat-app-coral-three-45.vercel.app',
+];
 const app = express();
-app.use(cors());
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 const conversationRoutes = require('./routes/conversationRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, { cors: { origin: allowedOrigins } });
 const PORT = 5000;
 mongoose
   .connect(process.env.MONGO_URI)
